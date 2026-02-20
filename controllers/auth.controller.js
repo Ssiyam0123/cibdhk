@@ -3,8 +3,8 @@ import User from "../models/user.js";
 
 export const register = async (req, res) => {
   try {
-    const { email, username, password } = req.body;
-    console.log("register time", username);
+    const { username, email, password } = req.body;
+    // console.log("register time", username);
     if (!username || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
@@ -15,11 +15,6 @@ export const register = async (req, res) => {
         .json({ message: "Password should be at least 6 characters long" });
     }
 
-    // if (username.length < 3) {
-    //   return res.status(400).json({ message: "Username should be at least 3 characters long" });
-    // }
-
-    // check if user already exists
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
       return res.status(400).json({ message: "Email already exists" });
@@ -30,22 +25,20 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Username already exists" });
     }
 
-    // get random avatar
-    const profileImage = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
 
     const user = new User({
       email,
       username,
       password,
-      profileImage,
+      // role : "admin"
     });
 
     await user.save();
 
-    const token = generateToken(user._id, res);
+    // const token = generateToken(user._id, res);
 
     res.status(201).json({
-      token,
+      message: "User registered successfully",
       user: {
         id: user._id,
         username: user.username,
@@ -55,7 +48,7 @@ export const register = async (req, res) => {
       },
     });
   } catch (error) {
-    console.log("Error in register route", error);
+    // console.log("Error in register route", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -63,22 +56,24 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log("login time ", email,password);
 
     if (!email || !password)
       return res.status(400).json({ message: "All fields are required" });
 
-    // check if user exists
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
+    if (!user)
+      return res.status(400).json({ message: "Invalid credentials" });
 
-    // check if password is correct
+    // Block non-admin users
+    if (user.role !== "admin") {
+      return res.status(403).json({ message: "Admin access only" });
+    }
+
     const isPasswordCorrect = await user.comparePassword(password);
     if (!isPasswordCorrect)
       return res.status(400).json({ message: "Invalid credentials" });
 
     const token = generateToken(user._id, res);
-    console.log(user);
 
     res.status(200).json({
       token,
@@ -86,17 +81,29 @@ export const login = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
+        role: user.role,
         profileImage: user.profileImage,
         createdAt: user.createdAt,
       },
     });
   } catch (error) {
-    console.log("Error in login route", error);
+    // console.log("Error in login route", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 export const logout = (_, res) => {
   res.cookie("jwt", "", { maxAge: 0 });
   res.status(200).json({ message: "Logged out successfully" });
 };
+
+
+
+
+
+
+
+
+
+

@@ -1,6 +1,0 @@
-# .nixpacks.toml
-[phases.setup]
-cmds = ["bun install"]
-
-[start]
-cmd = "bun start"

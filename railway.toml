@@ -1,8 +1,0 @@
-# railway.toml
-[build]
-builder = "nixpacks"
-buildCommand = "bun install"
-startCommand = "bun start"
-
-[build.scripts]
-install = "bun install"
